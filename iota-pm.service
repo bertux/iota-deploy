@@ -1,0 +1,14 @@
+[Unit]
+Description=IOTA Peer Manager
+After=network.target
+
+[Service]
+User=iri
+Group=iri
+Type=simple
+ExecStart=/usr/bin/iota-pm -i http://127.0.0.1:14265 -p 0.0.0.0:8888 -r 5
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
