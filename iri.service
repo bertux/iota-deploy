@@ -5,7 +5,7 @@ After=network-online.target
 [Service]
 WorkingDirectory=/var/lib/iri/target
 EnvironmentFile=-/etc/sysconfig/iri
-ExecStart=/usr/bin/java -Xmx${JAVA_MEM} -jar iri-${IRI_VERSION}.jar -p ${IRI_PORT} -n "${IRI_NEIGHBORS}" ${IRI_OPTIONS} --remote-limit-api "${REMOTE_LIMIT_API}"
+ExecStart=/usr/bin/java -Xmx${JAVA_MEM} ${JAVA_OPTIONS} -jar iri-${IRI_VERSION}.jar -p ${IRI_PORT} -n "${IRI_NEIGHBORS}" ${IRI_OPTIONS} --remote-limit-api "${REMOTE_LIMIT_API}"
 TimeoutStopSec=15
 Restart=on-failure
 RestartSec=10
