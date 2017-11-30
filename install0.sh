@@ -12,4 +12,3 @@ sudo cp installIRI.sh /var/lib/iri
 sudo useradd -s /sbin/nologin -M -d /var/lib/iri iri
 sudo chown iri.iri /var/lib/iri -R
 sudo chmod 700 /var/lib/iri
-sudo -u iri /var/lib/iri/installIRI.sh
