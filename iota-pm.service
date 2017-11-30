@@ -3,6 +3,7 @@ Description=IOTA Peer Manager
 After=network.target
 
 [Service]
+WorkingDirectory=/var/lib/iri
 User=iri
 Group=iri
 Type=simple
