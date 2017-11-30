@@ -8,7 +8,7 @@ sudo yum localinstall jdk-8u152-linux-x64.rpm -y
 git clone https://github.com/iotaledger/iri
 cd iri && git checkout master && cd ..
 sudo mv iri /var/lib
-sudo mv installIRI.sh /var/lib/iri
+sudo cp installIRI.sh /var/lib/iri
 sudo useradd -s /sbin/nologin -M -d /var/lib/iri iri
 sudo chown iri.iri /var/lib/iri -R
 sudo chmod 700 /var/lib/iri
