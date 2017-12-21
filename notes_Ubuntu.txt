@@ -1,0 +1,284 @@
+# Start
+sudo apt-get update
+
+sudo apt-get install git
+sudo apt-get install maven
+sudo apt-get install nano
+
+sudo apt-get purge openjdk-\*
+
+mkdir /opt/jdk
+cd /opt/jdk
+
+wget --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u152-b16/aa0333dd3019491ca4f6ddbe78cdb6d0/jdk-8u152-linux-x64.tar.gz" -O jdk-7-linux-x64.tar.gz
+
+tar -xzvf jdk-7-linux-x64.tar.gz
+update-alternatives --install /usr/bin/java java /opt/jdk/jdk1.8.0_152/bin/java 100
+update-alternatives --install /usr/bin/javac javac /opt/jdk/jdk1.8.0_152/bin/javac 100
+update-alternatives --install /usr/bin/javadoc javadoc /opt/jdk/jdk1.8.0_152/bin/javadoc 100
+update-alternatives --install /usr/bin/javap javap /opt/jdk/jdk1.8.0_152/bin/javap 100
+
+Modify the /etc/environment file:
+nano /etc/environment
+-add in the path string :/opt/jdk/jdk1.8.0_152/bin
+-add in the bottom
+JAVA_HOME=/opt/jdk/jdk1.8.0_152
+
+Because the file will be loaded automatically when system boots, we can execute the following command to get our variable effective right away:
+source /etc/environment
+
+for test java version:
+java -version
+
+**************************************
+To update Java, simply download an updated version from Oracle's website and extract it under the /opt/jdk directory, then set it up as the default JVM with a higher priority number (in this case 110):
+
+    update-alternatives --install /usr/bin/java java /opt/jdk/jdk.new.version/bin/java 110
+    update-alternatives --install /usr/bin/javac javac /opt/jdk/jdk.new.version/bin/javac 110
+
+You can keep the old version or delete it:
+
+    update-alternatives --remove java /opt/jdk/jdk.old.version/bin/java
+    update-alternatives --remove javac /opt/jdk/jdk.old.version/bin/javac
+
+    rm -rf /opt/jdk/jdk.old.version
+**************************************
+
+sudo useradd -s /usr/sbin/nologin -m iota
+sudo -u iota mkdir -p /home/iota/node /home/iota/node/ixi
+
+Clone iri source and build it yourself (BETTER).
+cd /home/iota
+mkdir iri_git_clone
+cd iri_git_clone
+git clone https://github.com/iotaledger/iri.git
+cd iri
+mvn clean compile
+mvn package
+cd ./target
+
+OR
+
+Download jar file
+sudo -u iota wget -O /home/iota/node/iri-1.4.1.2.jar https://github.com/iotaledger/iri/releases/download/v1.4.1.2/iri-1.4.1.2.jar
+
+nano /lib/systemd/system/iota.service and paste
+
+#########################################################
+[Unit]
+Description=IOTA (IRI) full node
+After=network.target
+
+[Service]
+WorkingDirectory=/home/iota/node
+User=iota
+PrivateDevices=yes
+Type=simple
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=60
+ExecStart=/usr/bin/java -XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses -XX:+CMSParallelRemarkEnabled -XX:+DisableAttachMechanism -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:MaxMetaspaceSize=30m -Xmx8G -Xms2G -Djava.net.preferIPv4Stack=true -jar iri-1.4.1.2.jar --remote -c iota.ini
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
+Alias=iota.service
+###########################################################
+
+nano /home/iota/node/iota.ini
+###########################################################
+[IRI]
+PORT = 14265
+UDP_RECEIVER_PORT = 14600
+TCP_RECEIVER_PORT = 15600
+API_HOST = 0.0.0.0
+IXI_DIR = ixi
+HEADLESS = true
+DEBUG = false
+TESTNET = false
+DB_PATH = mainnetdb
+RESCAN_DB = false
+
+REMOTE_LIMIT_API="removeNeighbors, addNeighbors, interruptAttachingToTangle, attachToTangle, getNeighbors"
+
+
+NEIGHBORS = tcp://xxx.xxx.xxx.xxx:15600 udp://domain_name:14600
+############################################################
+
+sudo systemctl daemon-reload && sudo systemctl enable iota.service
+sudo service iota restart
+
+sudo apt-get purge python*
+sudo apt-get install python3
+
+sudo apt-get install --install iptables
+create rules and then digit sudo netfilter-persistent save
+
+-----------------------------------------------------------------------
+Disable IPV6
+sudo nano /etc/sysctl.d/99-sysctl.conf
+
+Copy and paste the following 3 lines at the bottom of the file.
+
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+
+Save and close the file. Then execute the following command to load the above changes.
+
+sudo sysctl -p
+
+Now run the following command. You should see 1, which means IPv6 has been successfully disabled.
+
+cat /proc/sys/net/ipv6/conf/all/disable_ipv6
+
+------------------------------------------------------------------------
+Create swap file
+
+	sudo swapon --show
+
+If you don't get back any output, this means your system does not have swap space available currently.
+You can verify that there is no active swap using the free utility:
+
+free -h
+
+Output
+              total        used        free      shared  buff/cache   available
+Mem:           488M         36M        104M        652K        348M        426M
+Swap:            0B          0B          0B
+
+Before we do this, we should check the current disk usage by typing:
+
+	df -h
+
+Since the server in our example has 512MB of RAM, we will create a 1 Gigabyte file in this guide. Adjust this to meet the needs of your own server:
+
+    sudo fallocate -l 1G /swapfile
+
+We can verify that the correct amount of space was reserved by typing:
+
+    ls -lh /swapfile
+
+    -rw-r--r-- 1 root root 1.0G Apr 25 11:14 /swapfile
+
+Our file has been created with the correct amount of space set aside.
+
+Make the file only accessible to root by typing:
+
+    sudo chmod 600 /swapfile
+
+Verify the permissions change by typing:
+
+    ls -lh /swapfile
+
+Output
+-rw------- 1 root root 1.0G Apr 25 11:14 /swapfile
+
+As you can see, only the root user has the read and write flags enabled.
+
+We can now mark the file as swap space by typing:
+
+    sudo mkswap /swapfile
+
+Output
+Setting up swapspace version 1, size = 1024 MiB (1073737728 bytes)
+no label, UUID=6e965805-2ab9-450f-aed6-577e74089dbf
+
+After marking the file, we can enable the swap file, allowing our system to start utilizing it:
+
+    sudo swapon /swapfile
+
+We can verify that the swap is available by typing:
+
+    sudo swapon --show
+
+Output
+NAME      TYPE  SIZE USED PRIO
+/swapfile file 1024M   0B   -1
+
+We can check the output of the free utility again to corroborate our findings:
+
+    free -h
+
+Output
+              total        used        free      shared  buff/cache   available
+Mem:           488M         37M         96M        652K        354M        425M
+Swap:          1.0G          0B        1.0G
+
+Our recent changes have enabled the swap file for the current session. However, if we reboot, the server will not retain the swap settings automatically. We can change this by adding the swap file to our /etc/fstab file.
+
+Back up the /etc/fstab file in case anything goes wrong:
+
+    sudo cp /etc/fstab /etc/fstab.bak
+
+You can add the swap file information to the end of your /etc/fstab file by typing:
+
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+The swappiness parameter configures how often your system swaps data out of RAM to the swap space. This is a value between 0 and 100 that represents a percentage.
+
+We can see the current swappiness value by typing:
+
+    cat /proc/sys/vm/swappiness
+
+Output
+60
+
+For a Desktop, a swappiness setting of 60 is not a bad value. For a server, you might want to move it closer to 0.
+
+We can set the swappiness to a different value by using the sysctl command.
+
+For instance, to set the swappiness to 10, we could type:
+
+    sudo sysctl vm.swappiness=10
+
+Output
+vm.swappiness = 10
+
+This setting will persist until the next reboot. We can set this value automatically at restart by adding the line to our /etc/sysctl.conf file:
+
+    sudo nano /etc/sysctl.conf
+
+At the bottom, you can add:
+/etc/sysctl.conf
+
+vm.swappiness=10
+
+Save and close the file when you are finished.
+
+Another related value that you might want to modify is the vfs_cache_pressure. This setting configures how much the system will choose to cache inode and dentry information over other data.
+
+Basically, this is access data about the filesystem. This is generally very costly to look up and very frequently requested, so it's an excellent thing for your system to cache. You can see the current value by querying the proc filesystem again:
+
+    cat /proc/sys/vm/vfs_cache_pressure
+
+Output
+100
+
+As it is currently configured, our system removes inode information from the cache too quickly. We can set this to a more conservative setting like 50 by typing:
+
+    sudo sysctl vm.vfs_cache_pressure=50
+
+Output
+vm.vfs_cache_pressure = 50
+
+Again, this is only valid for our current session. We can change that by adding it to our configuration file like we did with our swappiness setting:
+
+    sudo nano /etc/sysctl.conf
+
+At the bottom, add the line that specifies your new value:
+/etc/sysctl.conf
+
+vm.vfs_cache_pressure=50
+
+Save and close the file when you are finished.
+
+------------------------------------------------------------------------------
+If you won't become full sync in 2-3 days:
+
+    - stop the service;
+    - delete all files in log and db folder;
+    - download the complete database from http://db.iota.partners/IOTA.partners-mainnetdb.tar.gz (updated every 30 minutes) and extract in db folder;
+    - start the service and in max 5 hours you'll be FULL SYNC :-)
